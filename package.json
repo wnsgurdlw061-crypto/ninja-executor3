@@ -1,0 +1,56 @@
+{
+  "name": "ninja-executor",
+  "version": "1.0.0",
+  "description": "Ninja Engine - Roblox Executor",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "dist": "electron-packager . NinjaExecutor --platform=win32 --arch=x64 --out=dist --overwrite"
+  },
+  "keywords": ["roblox", "executor", "lua", "script", "ninja"],
+  "author": "Ninja Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^26.8.1",
+    "electron-packager": "^17.1.2"
+  },
+  "build": {
+    "appId": "com.ninja.executor",
+    "productName": "Ninja Executor",
+    "copyright": "Copyright © 2024 Ninja Team",
+    "directories": {
+      "output": "dist-electron",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "cpp_engine/engine_complete.cpp",
+      "cpp_engine/veh_security.cpp",
+      "cpp_engine/injector.cpp"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "icon.ico",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

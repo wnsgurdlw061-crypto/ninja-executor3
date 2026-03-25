@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ninja Engine - Roblox Executor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .glass {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .neon-glow {
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+        }
+        
+        .neon-text {
+            text-shadow: 0 0 10px rgba(34, 197, 94, 0.8);
+        }
+        
+        .code-editor {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+        
+        .console-output {
+            background: #000;
+            border: 1px solid #30363d;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #22c55e;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-online {
+            background: #22c55e;
+            box-shadow: 0 0 10px #22c55e;
+        }
+        
+        .status-offline {
+            background: #ef4444;
+            box-shadow: 0 0 10px #ef4444;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(34, 197, 94, 0.3);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);
+        }
+        
+        .tab-active {
+            background: rgba(34, 197, 94, 0.2);
+            border-bottom: 2px solid #22c55e;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen text-white">
+    <!-- Background Animation -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-green-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="relative z-10 container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <header class="glass rounded-2xl p-6 mb-6 neon-glow">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-ninja text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold neon-text">Ninja Engine</h1>
+                        <p class="text-gray-400 text-sm">Roblox Executor v1.0.0</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <div class="flex items-center space-x-2">
+                        <div class="status-indicator status-offline" id="statusIndicator"></div>
+                        <span class="text-sm" id="statusText">Engine Offline</span>
+                    </div>
+                    <button class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fas fa-cog text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Panel - Controls -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Engine Controls -->
+                <div class="glass rounded-2xl p-6">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center">
+                        <i class="fas fa-rocket mr-2 text-green-400"></i>
+                        Engine Controls
+                    </h2>
+                    <div class="space-y-3">
+                        <button id="injectBtn" class="w-full btn-primary text-white py-3 px-4 rounded-xl font-medium flex items-center justify-center space-x-2">
+                            <i class="fas fa-inject"></i>
+                            <span>Inject Engine</span>
+                        </button>
+                        <button id="executeBtn" class="w-full bg-gray-700 hover:bg-gray-600 text-white py-3 px-4 rounded-xl font-medium flex items-center justify-center space-x-2 transition-colors" disabled>
+                            <i class="fas fa-play"></i>
+                            <span>Execute Script</span>
+                        </button>
+                        <button id="stopBtn" class="w-full btn-danger text-white py-3 px-4 rounded-xl font-medium flex items-center justify-center space-x-2" disabled>
+                            <i class="fas fa-stop"></i>
+                            <span>Stop Execution</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Script Hub -->
+                <div class="glass rounded-2xl p-6">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center">
+                        <i class="fas fa-book mr-2 text-blue-400"></i>
+                        Script Hub
+                    </h2>
+                    <div class="space-y-2">
+                        <button class="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg text-sm transition-colors">
+                            <i class="fas fa-user mr-2"></i>
+                            Player Scripts
+                        </button>
+                        <button class="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg text-sm transition-colors">
+                            <i class="fas fa-bolt mr-2"></i>
+                            Combat Scripts
+                        </button>
+                        <button class="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg text-sm transition-colors">
+                            <i class="fas fa-magic mr-2"></i>
+                            Utility Scripts
+                        </button>
+                        <button class="w-full bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg text-sm transition-colors">
+                            <i class="fas fa-plus mr-2"></i>
+                            Custom Scripts
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div class="glass rounded-2xl p-6">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center">
+                        <i class="fas fa-sliders-h mr-2 text-purple-400"></i>
+                        Settings
+                    </h2>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm">Auto Inject</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer">
+                                <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm">Anti-Detect</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                            </label>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm">VEH Bypass</span>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Editor & Console -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Code Editor -->
+                <div class="glass rounded-2xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold flex items-center">
+                            <i class="fas fa-code mr-2 text-yellow-400"></i>
+                            Script Editor
+                        </h2>
+                        <div class="flex items-center space-x-2">
+                            <button class="text-gray-400 hover:text-white transition-colors">
+                                <i class="fas fa-folder-open"></i>
+                            </button>
+                            <button class="text-gray-400 hover:text-white transition-colors">
+                                <i class="fas fa-save"></i>
+                            </button>
+                            <button class="text-gray-400 hover:text-white transition-colors">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mb-4 flex space-x-2">
+                        <button class="px-3 py-1 rounded-lg text-sm tab-active" data-tab="script1">Script 1</button>
+                        <button class="px-3 py-1 rounded-lg text-sm text-gray-400 hover:text-white" data-tab="script2">Script 2</button>
+                        <button class="px-3 py-1 rounded-lg text-sm text-gray-400 hover:text-white" data-tab="script3">Script 3</button>
+                        <button class="px-3 py-1 rounded-lg text-sm text-gray-400 hover:text-white">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <textarea id="codeEditor" class="code-editor w-full h-64 p-4 rounded-lg text-sm text-green-400 resize-none" placeholder="-- Ninja Engine Script Editor&#10;-- Write your Lua script here...&#10;&#10;print('Hello from Ninja Engine!')&#10;&#10;-- Get all players&#10;for _, player in pairs(game:GetService('Players'):GetPlayers()) do&#10;    print('Player:', player.Name)&#10;end">-- Ninja Engine Script Editor
+-- Write your Lua script here...
+
+print('Hello from Ninja Engine!')
+
+-- Get all players
+for _, player in pairs(game:GetService('Players'):GetPlayers()) do
+    print('Player:', player.Name)
+end</textarea>
+                </div>
+
+                <!-- Console Output -->
+                <div class="glass rounded-2xl p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold flex items-center">
+                            <i class="fas fa-terminal mr-2 text-green-400"></i>
+                            Console Output
+                        </h2>
+                        <button id="clearConsole" class="text-gray-400 hover:text-white transition-colors">
+                            <i class="fas fa-eraser"></i>
+                        </button>
+                    </div>
+                    <div id="consoleOutput" class="console-output w-full h-48 p-4 rounded-lg text-sm overflow-y-auto">
+                        <div>[00:00:00] Ninja Engine v1.0.0 initialized</div>
+                        <div>[00:00:01] Waiting for Roblox process...</div>
+                        <div>[00:00:02] Engine ready - Click 'Inject Engine' to start</div>
+                    </div>
+                </div>
+
+                <!-- Status Bar -->
+                <div class="glass rounded-2xl p-4">
+                    <div class="flex items-center justify-between text-sm">
+                        <div class="flex items-center space-x-6">
+                            <span class="flex items-center">
+                                <i class="fas fa-microchip mr-2 text-blue-400"></i>
+                                Status: <span id="engineStatus" class="ml-1 text-green-400">Ready</span>
+                            </span>
+                            <span class="flex items-center">
+                                <i class="fas fa-clock mr-2 text-yellow-400"></i>
+                                Execution Time: <span id="execTime" class="ml-1">0ms</span>
+                            </span>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <span class="flex items-center">
+                                <i class="fas fa-memory mr-2 text-purple-400"></i>
+                                Memory: <span id="memoryUsage" class="ml-1">2.4MB</span>
+                            </span>
+                            <span class="flex items-center">
+                                <i class="fas fa-code-branch mr-2 text-orange-400"></i>
+                                Scripts: <span id="scriptCount" class="ml-1">0</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Engine State
+        let engineState = {
+            injected: false,
+            executing: false,
+            scriptCount: 0
+        };
+
+        // DOM Elements
+        const elements = {
+            statusIndicator: document.getElementById('statusIndicator'),
+            statusText: document.getElementById('statusText'),
+            injectBtn: document.getElementById('injectBtn'),
+            executeBtn: document.getElementById('executeBtn'),
+            stopBtn: document.getElementById('stopBtn'),
+            codeEditor: document.getElementById('codeEditor'),
+            consoleOutput: document.getElementById('consoleOutput'),
+            clearConsole: document.getElementById('clearConsole'),
+            engineStatus: document.getElementById('engineStatus'),
+            execTime: document.getElementById('execTime'),
+            memoryUsage: document.getElementById('memoryUsage'),
+            scriptCount: document.getElementById('scriptCount')
+        };
+
+        // Console Logging
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = type === 'error' ? 'text-red-400' : 'text-green-400';
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            elements.consoleOutput.appendChild(logEntry);
+            elements.consoleOutput.scrollTop = elements.consoleOutput.scrollHeight;
+        }
+
+        // Update Status
+        function updateStatus(injected, executing = false) {
+            engineState.injected = injected;
+            engineState.executing = executing;
+
+            if (injected) {
+                elements.statusIndicator.className = 'status-indicator status-online';
+                elements.statusText.textContent = 'Engine Connected';
+                elements.engineStatus.textContent = 'Connected';
+                elements.executeBtn.disabled = false;
+                elements.executeBtn.className = 'w-full btn-primary text-white py-3 px-4 rounded-xl font-medium flex items-center justify-center space-x-2';
+            } else {
+                elements.statusIndicator.className = 'status-indicator status-offline';
+                elements.statusText.textContent = 'Engine Offline';
+                elements.engineStatus.textContent = 'Offline';
+                elements.executeBtn.disabled = true;
+                elements.executeBtn.className = 'w-full bg-gray-700 text-white py-3 px-4 rounded-xl font-medium flex items-center justify-center space-x-2';
+            }
+
+            elements.stopBtn.disabled = !executing;
+        }
+
+        // Inject Engine
+        elements.injectBtn.addEventListener('click', async () => {
+            elements.injectBtn.disabled = true;
+            elements.injectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Injecting...</span>';
+            
+            log('Searching for Roblox process...');
+            
+            // Simulate injection process
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            log('Roblox process found (PID: 1234)');
+            log('Injecting Ninja Engine...');
+            
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            log('Engine injected successfully!');
+            log('VEH bypass activated');
+            log('Anti-cheat evasion enabled');
+            
+            updateStatus(true);
+            elements.injectBtn.innerHTML = '<i class="fas fa-check"></i><span>Injected ✓</span>';
+        });
+
+        // Execute Script
+        elements.executeBtn.addEventListener('click', async () => {
+            if (!engineState.injected) {
+                log('ERROR: Engine not injected!', 'error');
+                return;
+            }
+
+            const script = elements.codeEditor.value;
+            if (!script.trim()) {
+                log('ERROR: No script to execute!', 'error');
+                return;
+            }
+
+            elements.executeBtn.disabled = true;
+            updateStatus(true, true);
+            
+            log('Executing script...');
+            const startTime = Date.now();
+            
+            // Simulate script execution
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const executionTime = Date.now() - startTime;
+            elements.execTime.textContent = `${executionTime}ms`;
+            
+            log('Script executed successfully');
+            log(`Output: Hello from Ninja Engine!`);
+            log(`Execution time: ${executionTime}ms`);
+            
+            engineState.scriptCount++;
+            elements.scriptCount.textContent = engineState.scriptCount;
+            
+            updateStatus(true, false);
+        });
+
+        // Stop Execution
+        elements.stopBtn.addEventListener('click', () => {
+            log('Execution stopped by user');
+            updateStatus(true, false);
+        });
+
+        // Clear Console
+        elements.clearConsole.addEventListener('click', () => {
+            elements.consoleOutput.innerHTML = '';
+            log('Console cleared');
+        });
+
+        // Tab Switching
+        document.querySelectorAll('[data-tab]').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('[data-tab]').forEach(t => {
+                    t.className = 'px-3 py-1 rounded-lg text-sm text-gray-400 hover:text-white';
+                });
+                tab.className = 'px-3 py-1 rounded-lg text-sm tab-active';
+            });
+        });
+
+        // Simulate memory usage
+        setInterval(() => {
+            const memory = (Math.random() * 2 + 1.5).toFixed(1);
+            elements.memoryUsage.textContent = `${memory}MB`;
+        }, 3000);
+
+        // Initialize
+        log('Ninja Engine UI loaded successfully');
+        log('Ready for injection');
+    </script>
+</body>
+</html>

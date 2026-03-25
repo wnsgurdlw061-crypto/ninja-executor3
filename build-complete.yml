@@ -1,0 +1,71 @@
+name: Build Complete Ninja Executor
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        
+    - name: Setup MinGW
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        update: true
+        install: >-
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-make
+          
+    - name: Build C++ Engine
+      run: |
+        mkdir cpp_engine\build\Release
+        g++ -shared -O2 -static-libgcc -static-libstdc++ -DWIN32 -DNDEBUG -D_WINDOWS -D_USRDLL -DNINJA_ENGINE_EXPORTS -I"cpp_engine" cpp_engine\engine_complete.cpp cpp_engine\veh_security.cpp -o cpp_engine\build\Release\ninja_engine.dll -lkernel32 -luser32 -lgdi32 -ladvapi32 -lshell32 -lole32 -loleaut32 -luuid -lws2_32
+        
+    - name: Build Injector
+      run: |
+        g++ -O2 -static-libgcc -static-libstdc++ -DWIN32 -DNDEBUG -D_CONSOLE cpp_engine\injector.cpp -o cpp_engine\build\Release\NinjaInjector.exe -lkernel32 -luser32 -ladvapi32 -lpsapi
+        
+    - name: Install Node dependencies
+      run: npm install --no-optional
+      
+    - name: Build Electron App
+      run: npm run dist
+      
+    - name: Copy Engine Files
+      run: |
+        mkdir dist\NinjaExecutor-win32-x64\engine
+        copy cpp_engine\build\Release\ninja_engine.dll dist\NinjaExecutor-win32-x64\engine\
+        copy cpp_engine\build\Release\NinjaInjector.exe dist\NinjaExecutor-win32-x64\engine\
+        
+    - name: Create Complete Package
+      run: |
+        cd dist
+        7z a -tzip ../NinjaExecutor-Complete.zip NinjaExecutor-win32-x64
+        
+    - name: Upload Complete Package
+      uses: actions/upload-artifact@v3
+      with:
+        name: NinjaExecutor-Complete
+        path: NinjaExecutor-Complete.zip
+        
+    - name: Upload Engine DLL
+      uses: actions/upload-artifact@v3
+      with:
+        name: ninja-engine-dll
+        path: cpp_engine/build/Release/ninja_engine.dll
+        
+    - name: Upload Injector
+      uses: actions/upload-artifact@v3
+      with:
+        name: ninja-injector
+        path: cpp_engine/build/Release/NinjaInjector.exe
