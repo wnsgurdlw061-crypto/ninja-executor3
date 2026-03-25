@@ -50,13 +50,13 @@ jobs:
     - name: Create Complete Package
       run: |
         cd dist
-        7z a -tzip ../NinjaExecutor-Complete.zip NinjaExecutor-win32-x64
+        tar -czf ../NinjaExecutor-Complete.tar.gz NinjaExecutor-win32-x64
         
     - name: Upload Complete Package
       uses: actions/upload-artifact@v3
       with:
         name: NinjaExecutor-Complete
-        path: NinjaExecutor-Complete.zip
+        path: NinjaExecutor-Complete.tar.gz
         
     - name: Upload Engine DLL
       uses: actions/upload-artifact@v3
