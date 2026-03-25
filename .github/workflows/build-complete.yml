@@ -10,10 +10,10 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '18'
         
@@ -53,19 +53,20 @@ jobs:
         tar -czf ../NinjaExecutor-Complete.tar.gz NinjaExecutor-win32-x64
         
     - name: Upload Complete Package
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: NinjaExecutor-Complete
         path: NinjaExecutor-Complete.tar.gz
         
     - name: Upload Engine DLL
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ninja-engine-dll
         path: cpp_engine/build/Release/ninja_engine.dll
         
     - name: Upload Injector
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ninja-injector
         path: cpp_engine/build/Release/NinjaInjector.exe
+
